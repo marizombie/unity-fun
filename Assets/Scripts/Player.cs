@@ -1,30 +1,49 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using UnityEngine;
 
 namespace Assets.Scripts
 {
     public class Player : MonoBehaviour
     {
-        // Start is called before the first frame update
-        private float speed = 15;
-        private float turnSpeed = 30;
+        private const float Speed = 15;
+        private const float BulletSpeed = 500;
+
+        //private float turnSpeed = 30;
         private float horizontalInput;
         private float forwardInput;
+
+        private int playerId;
+        private string playerName;
         private Client client;
 
-        public int PlayerId;
-        public GameObject bulletPrefab;
+        public GameObject BulletPrefab;
 
-        private void SetPlayerId(int id)
+        public void SetInitialProperties(Client client, int playerId, string playerName)
         {
-            PlayerId = id;
+            this.client = client;
+            this.playerId = playerId;
+            this.playerName = playerName;
         }
 
+        private void Shoot(Vector3 position)
+        {
+            var targetPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            var bullet = Instantiate(BulletPrefab, position, BulletPrefab.transform.rotation);
+            bullet.transform.LookAt(targetPoint);
+            bullet.GetComponent<Rigidbody>().AddForce(transform.forward * BulletSpeed);
+        }
+
+        private void SyncWithServer(Vector3 position)
+        {
+            var message = new MessageStructure(position.x, position.y, position.z, playerId);
+            var serializedMessage = JsonUtility.ToJson(message);
+            var bytes = Encoding.Unicode.GetBytes(serializedMessage);
+            client.SendMessage(bytes);
+        }
+
+        // Start is called before the first frame update
         private void Start()
         {
-            client = new Client();
-            client.ReceiveMessage();
         }
 
         // Update is called once per frame
@@ -33,50 +52,23 @@ namespace Assets.Scripts
             horizontalInput = Input.GetAxis("Horizontal");
             forwardInput = Input.GetAxis("Vertical");
 
-            transform.Translate(Vector3.forward * Time.deltaTime * speed * forwardInput); 
-            // transform.Translate(Vector3.right * Time.deltaTime * speed * horizontalInput);
-            transform.Rotate(Vector3.up, Time.deltaTime * turnSpeed * horizontalInput);
+            transform.Translate(Vector3.forward * Time.deltaTime * Speed * forwardInput);
+            transform.Translate(Vector3.right * Time.deltaTime * Speed * horizontalInput);
+            //transform.Rotate(Vector3.up, Time.deltaTime * turnSpeed * horizontalInput);
+
+            var position = transform.position;
 
             if (Input.GetMouseButtonDown(0))
             {
-                Instantiate(bulletPrefab, transform.position, bulletPrefab.transform.rotation);
+                Shoot(position);
             }
 
-            var pos = transform.position;
-            var message = new MessageStructure(pos.x, pos.y, pos.z, PlayerId);
-            var serializedMessage = JsonUtility.ToJson(message);
-            var bytes = Encoding.Unicode.GetBytes(serializedMessage);
-            client.SendMessage(bytes);
+            SyncWithServer(position);
 
-            client.messageDataStorage.TryDequeue(out var results);
-            var jsonStr = Encoding.Unicode.GetString(results);
-            //Debug.Log(jsonStr);
-            var receivedMessage = JsonUtility.FromJson<MessageStructure>(jsonStr);
-            Debug.Log($"{receivedMessage.X}, {receivedMessage.Y}");
-        }
-    }
-
-
-    [Serializable]
-    public class MessageStructure
-    {
-        [SerializeField] public float X;
-        [SerializeField] public float Y;
-        [SerializeField] public float Z;
-
-        [SerializeField] public int PlayerId;
-
-        public MessageStructure(float x, float y, float z, int playerId)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-            PlayerId = playerId;
-        }
-
-        public static MessageStructure CreateFromJson(string jsonString)
-        {
-            return JsonUtility.FromJson<MessageStructure>(jsonString);
+            //client.messageDataStorage.TryDequeue(out var results);
+            //var jsonStr = Encoding.Unicode.GetString(results);
+            //var receivedMessage = JsonUtility.FromJson<MessageStructure>(jsonStr);
+            //Debug.Log($"{receivedMessage.X}, {receivedMessage.Y}");
         }
     }
 }

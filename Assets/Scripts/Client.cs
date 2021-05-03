@@ -3,57 +3,59 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using UnityEngine;
 
-public class Client 
+namespace Assets.Scripts
 {
-    private int remotePort = 8000;
-    private string serverAddress = "127.0.0.1";
-    private UdpClient udpClient;
-    private IPEndPoint endPoint;
+    public class Client
+    {
+        private int remotePort = 8000;
+        private string serverAddress = "127.0.0.1";
+        private readonly UdpClient udpClient;
+        private IPEndPoint endPoint;
 
-    //private List<byte[]> messageDataStorage;
-    public ConcurrentQueue<byte[]> messageDataStorage { get; set; }
+        public ConcurrentQueue<byte[]> MessageDataStorage { get; set; }
     
-    public Client()
-    {
-        //endPoint = new IPEndPoint(IPAddress.Parse(serverAddress), remotePort);
-        udpClient = new UdpClient();
-        udpClient.Connect(serverAddress, remotePort);
-
-        messageDataStorage = new ConcurrentQueue<byte[]>();
-    }
-
-
-    public void SendMessage(byte[] messageBytes)
-    {
-        try
+        public Client()
         {
-            udpClient.Send(messageBytes, messageBytes.Length);
+            //endPoint = new IPEndPoint(IPAddress.Parse(serverAddress), remotePort);
+            udpClient = new UdpClient();
+            udpClient.Connect(serverAddress, remotePort);
+
+            MessageDataStorage = new ConcurrentQueue<byte[]>();
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
-    }
 
-    private void Receive()
-    {
-        while (true)
+        public void SendMessage(byte[] messageBytes)
         {
-            var data = udpClient.Receive(ref endPoint);
-            messageDataStorage.Enqueue(data);
+            try
+            {
+                udpClient.Send(messageBytes, messageBytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.Message);
+            }
         }
-    }
 
-    public async void ReceiveMessage()
-    {
-        try
+        private void Receive()
         {
-            await Task.Run(Receive);
+            while (true)
+            {
+                var data = udpClient.Receive(ref endPoint);
+                MessageDataStorage.Enqueue(data);
+            }
         }
-        catch (Exception ex)
+
+        public async void ReceiveMessage()
         {
-            Console.WriteLine(ex.Message);
+            try
+            {
+                await Task.Run(Receive);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.Message);
+            }
         }
     }
 }
