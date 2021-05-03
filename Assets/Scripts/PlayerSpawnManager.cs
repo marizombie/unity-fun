@@ -12,16 +12,17 @@ namespace Assets.Scripts
         private Client client;
 
         public GameObject playerPrefab;
-        public List<int> playerIds;
+        public Dictionary<int, Player> playersDictionary;
 
         private void Start()
         {
-            playerIds = new List<int>();
+            playersDictionary = new Dictionary<int, Player>();
 
             client = new Client();
             client.ReceiveMessage();
 
-            SpawnNewPlayer(0, "initial player");
+            var startingPosition = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y / 2, 0);
+            SpawnNewPlayer(0, "initial player", startingPosition);
         }
 
         private void Update()
@@ -31,19 +32,26 @@ namespace Assets.Scripts
             var jsonStr = Encoding.Unicode.GetString(results);
             var receivedMessage = JsonUtility.FromJson<MessageStructure>(jsonStr);
             var playerId = receivedMessage.PlayerId;
-            if (playerIds.Contains(playerId)) return;
+            var serverPosition = new Vector3(receivedMessage.X, receivedMessage.Y, receivedMessage.Z);
 
-            SpawnNewPlayer(playerId, $"new player {playerId}");
-            //Debug.Log($"{receivedMessage.X}, {receivedMessage.Y}");
+            var containsId = playersDictionary.TryGetValue(playerId, out var player);
+            if (containsId)
+            {
+                player.UpdatePosition(serverPosition);
+            }
+            else
+            {
+                SpawnNewPlayer(playerId, $"new player {playerId}", serverPosition);
+            }
         }
 
-        public void SpawnNewPlayer(int playerId, string playerName = "")
+        public void SpawnNewPlayer(int playerId, string playerName, Vector3 position)
         {
-            playerIds.Add(playerId);
-
-            var position = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y/2, 0);
+            //var position = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y/2, 0);
             var player = Instantiate(playerPrefab, position, Quaternion.identity);
             player.GetComponent<Player>().SetInitialProperties(client, playerId, playerName);
+
+            playersDictionary.Add(playerId, player.GetComponent<Player>());
         }
     }
 

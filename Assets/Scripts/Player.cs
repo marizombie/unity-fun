@@ -25,6 +25,11 @@ namespace Assets.Scripts
             this.playerName = playerName;
         }
 
+        public void UpdatePosition(Vector3 newPosition)
+        {
+            transform.position = newPosition;
+        }
+
         private void Shoot(Vector3 position)
         {
             var targetPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
