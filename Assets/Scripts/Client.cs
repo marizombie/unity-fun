@@ -1,0 +1,59 @@
+﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+
+public class Client 
+{
+    private int remotePort = 8000;
+    private string serverAddress = "127.0.0.1";
+    private UdpClient udpClient;
+    private IPEndPoint endPoint;
+
+    //private List<byte[]> messageDataStorage;
+    public ConcurrentQueue<byte[]> messageDataStorage { get; set; }
+    
+    public Client()
+    {
+        //endPoint = new IPEndPoint(IPAddress.Parse(serverAddress), remotePort);
+        udpClient = new UdpClient();
+        udpClient.Connect(serverAddress, remotePort);
+
+        messageDataStorage = new ConcurrentQueue<byte[]>();
+    }
+
+
+    public void SendMessage(byte[] messageBytes)
+    {
+        try
+        {
+            udpClient.Send(messageBytes, messageBytes.Length);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private void Receive()
+    {
+        while (true)
+        {
+            var data = udpClient.Receive(ref endPoint);
+            messageDataStorage.Enqueue(data);
+        }
+    }
+
+    public async void ReceiveMessage()
+    {
+        try
+        {
+            await Task.Run(Receive);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}
