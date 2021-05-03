@@ -168,6 +168,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 1716946416064742513, guid: ab6c9c0b45d6ac34081fbe9291d276dc,
     type: 3}
+  playerIds: 
 --- !u!1 &597637206
 GameObject:
   m_ObjectHideFlags: 0
