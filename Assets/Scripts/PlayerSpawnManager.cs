@@ -8,26 +8,27 @@ namespace Assets.Scripts
 {
     public class PlayerSpawnManager : MonoBehaviour
     {
-        private float mapDim = 20;
+        private float mapDim = 5;
         private Client client;
 
         public GameObject playerPrefab;
-        public Dictionary<int, Player> playersDictionary;
+        public Dictionary<int, GameObject> playersDictionary;
 
         private void Start()
         {
-            playersDictionary = new Dictionary<int, Player>();
+            playersDictionary = new Dictionary<int, GameObject>();
 
             client = new Client();
             client.ReceiveMessage();
 
             var startingPosition = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y / 2, 0);
-            SpawnNewPlayer(0, "initial player", startingPosition);
+            SpawnNewPlayer(0, "initial player", startingPosition, isLocalPlayer: true);
         }
 
         private void Update()
         {
             if (client.MessageDataStorage.IsEmpty) return;
+
             client.MessageDataStorage.TryDequeue(out var results);
             var jsonStr = Encoding.Unicode.GetString(results);
             var receivedMessage = JsonUtility.FromJson<MessageStructure>(jsonStr);
@@ -37,7 +38,12 @@ namespace Assets.Scripts
             var containsId = playersDictionary.TryGetValue(playerId, out var player);
             if (containsId)
             {
-                player.UpdatePosition(serverPosition);
+                player.GetComponent<Player>().UpdatePosition(serverPosition);
+                //var playerPosition = player.transform.position;
+                //if (Math.Abs(serverPosition.x - playerPosition.x) <= 0.1f ||
+                //    Math.Abs(serverPosition.y - playerPosition.y) <= 0.1f ||
+                //    Math.Abs(serverPosition.z - playerPosition.z) <= 0.1f)
+                //    return;
             }
             else
             {
@@ -45,13 +51,14 @@ namespace Assets.Scripts
             }
         }
 
-        public void SpawnNewPlayer(int playerId, string playerName, Vector3 position)
+        public void SpawnNewPlayer(int playerId, string playerName, Vector3 position, bool isLocalPlayer = false)
         {
             //var position = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y/2, 0);
             var player = Instantiate(playerPrefab, position, Quaternion.identity);
-            player.GetComponent<Player>().SetInitialProperties(client, playerId, playerName);
+            //TODO: find out how correctly check if player is local
+            player.GetComponent<Player>().SetInitialProperties(client, playerId, playerName, isLocalPlayer);
 
-            playersDictionary.Add(playerId, player.GetComponent<Player>());
+            playersDictionary.Add(playerId, player);
         }
     }
 

@@ -168,7 +168,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 1716946416064742513, guid: ab6c9c0b45d6ac34081fbe9291d276dc,
     type: 3}
-  playerIds: 
 --- !u!1 &597637206
 GameObject:
   m_ObjectHideFlags: 0
@@ -369,13 +368,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 10, z: -8}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 20, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!850595691 &1304389146
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -464,7 +463,7 @@ Transform:
   m_GameObject: {fileID: 1818389355}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0, z: 0}
-  m_LocalScale: {x: 50, y: -0.1, z: 50}
+  m_LocalScale: {x: 20, y: -0.1, z: 20}
   m_Children: []
   m_Father: {fileID: 597637207}
   m_RootOrder: 0
