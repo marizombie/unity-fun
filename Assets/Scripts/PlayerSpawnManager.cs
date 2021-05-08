@@ -22,7 +22,9 @@ namespace Assets.Scripts
             client.ReceiveMessage();
 
             var startingPosition = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y / 2, 0);
-            SpawnNewPlayer(0, "initial player", startingPosition, isLocalPlayer: true);
+            //get player id from server when player logs in?
+            var playerId = Random.Range(0, 100);
+            SpawnNewPlayer(playerId, "initial player", startingPosition, isLocalPlayer: true);
         }
 
         private void Update()
@@ -38,12 +40,16 @@ namespace Assets.Scripts
             var containsId = playersDictionary.TryGetValue(playerId, out var player);
             if (containsId)
             {
-                player.GetComponent<Player>().UpdatePosition(serverPosition);
+                if (player.GetComponent<Player>().isLocalPlayer) return;
+
+                //player.UpdatePosition(serverPosition);
                 //var playerPosition = player.transform.position;
                 //if (Math.Abs(serverPosition.x - playerPosition.x) <= 0.1f ||
                 //    Math.Abs(serverPosition.y - playerPosition.y) <= 0.1f ||
                 //    Math.Abs(serverPosition.z - playerPosition.z) <= 0.1f)
                 //    return;
+
+                player.transform.position = serverPosition;
             }
             else
             {

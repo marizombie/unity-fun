@@ -16,6 +16,7 @@ namespace Assets.Scripts
         private int playerId;
         public bool isLocalPlayer;
         private string playerName;
+        private Vector3 previousPlayerPosition;
         private Vector3 currentServerPosition;
         private Client client;
 
@@ -24,8 +25,7 @@ namespace Assets.Scripts
 
         public void SetInitialProperties(Client client, int playerId, string playerName, bool isLocal)
         {
-            Debug.Log(client);
-            if (client == null) return;
+            if (client == null) Debug.Log("client is null");
 
             this.client = client;
             this.playerId = playerId;
@@ -33,12 +33,14 @@ namespace Assets.Scripts
             isLocalPlayer = isLocal;
         }
 
-        public void UpdatePosition(Vector3 newPosition)
-        {
-            if (isLocalPlayer) return;
-            IsUpdatePositionNeeded = true;
-            currentServerPosition = newPosition;
-        }
+        //public void UpdatePosition(Vector3 newPosition)
+        //{
+        //    if (isLocalPlayer) return;
+
+        //    Debug.Log($"opponent position updating, new position: {newPosition}");
+        //    IsUpdatePositionNeeded = true;
+        //    currentServerPosition = newPosition;
+        //}
 
         private void Shoot(Vector3 position)
         {
@@ -54,7 +56,6 @@ namespace Assets.Scripts
             var message = new MessageStructure(position.x, position.y, position.z, playerId);
             var serializedMessage = JsonUtility.ToJson(message);
             var bytes = Encoding.Unicode.GetBytes(serializedMessage);
-            Debug.Log(client);
             client.SendMessage(bytes);
         }
 
@@ -107,12 +108,37 @@ namespace Assets.Scripts
                 Shoot(position);
             }
 
-            SyncWithServer(position);
-
-            if (IsUpdatePositionNeeded)
+            if (previousPlayerPosition != position)
             {
-                StartCoroutine("MoveFunction");
+                SyncWithServer(position);
             }
+
+            previousPlayerPosition = position;
+
+            //if (IsUpdatePositionNeeded)
+            //{
+            //    StartCoroutine("MoveFunction");
+            //}
         }
+
+        //IEnumerator MoveFunction()
+        //{
+        //    var timeSinceStarted = 0f;
+        //    while (true)
+        //    {
+        //        timeSinceStarted += Time.deltaTime;
+        //        transform.position = Vector3.Lerp(transform.position, currentServerPosition, timeSinceStarted);
+
+        //        // If the object has arrived, stop the coroutine
+        //        if (transform.position == currentServerPosition)
+        //        {
+        //            IsUpdatePositionNeeded = false;
+        //            yield break;
+        //        }
+
+        //        // Otherwise, continue next frame
+        //        yield return null;
+        //    }
+        //}
     }
 }
