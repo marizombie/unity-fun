@@ -18,7 +18,6 @@ namespace Assets.Scripts
     
         public Client()
         {
-            //endPoint = new IPEndPoint(IPAddress.Parse(serverAddress), remotePort);
             udpClient = new UdpClient();
             udpClient.Connect(serverAddress, remotePort);
 

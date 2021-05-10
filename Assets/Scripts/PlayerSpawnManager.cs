@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using FlatBuffers;
+using Messages;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -12,11 +13,11 @@ namespace Assets.Scripts
         private Client client;
 
         public GameObject playerPrefab;
-        public Dictionary<int, GameObject> playersDictionary;
+        public Dictionary<uint, GameObject> playersDictionary;
 
         private void Start()
         {
-            playersDictionary = new Dictionary<int, GameObject>();
+            playersDictionary = new Dictionary<uint, GameObject>();
 
             client = new Client();
             client.ReceiveMessage();
@@ -24,20 +25,29 @@ namespace Assets.Scripts
             var startingPosition = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y / 2, 0);
             //get player id from server when player logs in?
             var playerId = Random.Range(0, 100);
-            SpawnNewPlayer(playerId, "initial player", startingPosition, isLocalPlayer: true);
+            SpawnNewPlayer((uint)playerId, "initial player", startingPosition, isLocalPlayer: true);
         }
 
         private void Update()
         {
             if (client.MessageDataStorage.IsEmpty) return;
 
-            client.MessageDataStorage.TryDequeue(out var results);
-            var jsonStr = Encoding.Unicode.GetString(results);
-            var receivedMessage = JsonUtility.FromJson<MessageStructure>(jsonStr);
-            var playerId = receivedMessage.PlayerId;
-            var serverPosition = new Vector3(receivedMessage.X, receivedMessage.Y, receivedMessage.Z);
+            if (!client.MessageDataStorage.TryDequeue(out var results)) return;
 
-            var containsId = playersDictionary.TryGetValue(playerId, out var player);
+            var bytesBuffer = new ByteBuffer(results);
+            if (bytesBuffer.Length == 0)
+            {
+                Debug.Log("bytes buffer is empty");
+
+                return;
+            }
+
+            var receivedMessage = Message.GetRootAsMessage(bytesBuffer);
+
+            var playerId = receivedMessage.PlayerId;
+            Debug.Log($"received playerid: {playerId}");
+            var serverPosition = new Vector3(receivedMessage.X, receivedMessage.Y, receivedMessage.Z);
+            var containsId = playersDictionary.TryGetValue(receivedMessage.PlayerId, out var player);
             if (containsId)
             {
                 if (player.GetComponent<Player>().isLocalPlayer) return;
@@ -57,7 +67,7 @@ namespace Assets.Scripts
             }
         }
 
-        public void SpawnNewPlayer(int playerId, string playerName, Vector3 position, bool isLocalPlayer = false)
+        public void SpawnNewPlayer(uint playerId, string playerName, Vector3 position, bool isLocalPlayer = false)
         {
             //var position = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y/2, 0);
             var player = Instantiate(playerPrefab, position, Quaternion.identity);

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
-using System.Text;
 using UnityEngine;
+using FlatBuffers;
+using Messages;
 
 namespace Assets.Scripts
 {
@@ -13,7 +14,7 @@ namespace Assets.Scripts
         private float horizontalInput;
         private float forwardInput;
 
-        private int playerId;
+        private uint playerId;
         public bool isLocalPlayer;
         private string playerName;
         private Vector3 previousPlayerPosition;
@@ -23,7 +24,7 @@ namespace Assets.Scripts
         public bool IsUpdatePositionNeeded;
         public GameObject BulletPrefab;
 
-        public void SetInitialProperties(Client client, int playerId, string playerName, bool isLocal)
+        public void SetInitialProperties(Client client, uint playerId, string playerName, bool isLocal)
         {
             if (client == null) Debug.Log("client is null");
 
@@ -53,10 +54,11 @@ namespace Assets.Scripts
         private void SyncWithServer(Vector3 position)
         {
             if (!isLocalPlayer) return;
-            var message = new MessageStructure(position.x, position.y, position.z, playerId);
-            var serializedMessage = JsonUtility.ToJson(message);
-            var bytes = Encoding.Unicode.GetBytes(serializedMessage);
-            client.SendMessage(bytes);
+
+            var flatBufBuilder = new FlatBufferBuilder(1);
+            Message.CreateMessage(flatBufBuilder, playerId, position.z, position.x, position.y);
+            using var memoryStream = flatBufBuilder.DataBuffer.ToMemoryStream(flatBufBuilder.DataBuffer.Position, flatBufBuilder.DataBuffer.Length);
+            client.SendMessage(memoryStream.ToArray());
         }
 
         IEnumerator MoveFunction()
@@ -86,7 +88,6 @@ namespace Assets.Scripts
 
         private void FixedUpdate()
         {
-
         }
 
         // Update is called once per frame
