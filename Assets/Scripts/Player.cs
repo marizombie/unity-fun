@@ -56,9 +56,12 @@ namespace Assets.Scripts
             if (!isLocalPlayer) return;
 
             var flatBufBuilder = new FlatBufferBuilder(1);
-            Message.CreateMessage(flatBufBuilder, playerId, position.z, position.x, position.y);
-            using var memoryStream = flatBufBuilder.DataBuffer.ToMemoryStream(flatBufBuilder.DataBuffer.Position, flatBufBuilder.DataBuffer.Length);
-            client.SendMessage(memoryStream.ToArray());
+            var offset = Message.CreateMessage(flatBufBuilder, playerId, position.z, position.x, position.y);
+            Message.FinishMessageBuffer(flatBufBuilder, offset);
+
+            var messageBytes =
+                flatBufBuilder.SizedByteArray();
+            client.SendMessage(messageBytes);
         }
 
         IEnumerator MoveFunction()

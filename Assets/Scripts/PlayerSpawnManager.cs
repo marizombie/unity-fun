@@ -44,8 +44,7 @@ namespace Assets.Scripts
 
             var receivedMessage = Message.GetRootAsMessage(bytesBuffer);
 
-            var playerId = receivedMessage.PlayerId;
-            Debug.Log($"received playerid: {playerId}");
+            var playerId = receivedMessage.PlayerId; 
             var serverPosition = new Vector3(receivedMessage.X, receivedMessage.Y, receivedMessage.Z);
             var containsId = playersDictionary.TryGetValue(receivedMessage.PlayerId, out var player);
             if (containsId)
