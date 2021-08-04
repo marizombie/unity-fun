@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using FlatBuffers;
 using Messages;
@@ -19,12 +20,12 @@ namespace Assets.Scripts
         private string playerName;
         private Vector3 previousPlayerPosition;
         private Vector3 currentServerPosition;
-        private Client client;
+        private Client.Client client;
 
         public bool IsUpdatePositionNeeded;
-        public GameObject BulletPrefab;
+        public GameObject bulletPrefab;
 
-        public void SetInitialProperties(Client client, uint playerId, string playerName, bool isLocal)
+        public void SetInitialProperties(Client.Client client, uint playerId, string playerName, bool isLocal)
         {
             if (client == null) Debug.Log("client is null");
 
@@ -46,9 +47,10 @@ namespace Assets.Scripts
         private void Shoot(Vector3 position)
         {
             var targetPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            var bullet = Instantiate(BulletPrefab, position, BulletPrefab.transform.rotation);
+            var bullet = Instantiate(bulletPrefab, position, bulletPrefab.transform.rotation);
             bullet.transform.LookAt(targetPoint);
             bullet.GetComponent<Rigidbody>().AddForce(transform.forward * BulletSpeed);
+            // server checks if shot?
         }
 
         private void SyncWithServer(Vector3 position)
@@ -61,7 +63,7 @@ namespace Assets.Scripts
 
             var messageBytes =
                 flatBufBuilder.SizedByteArray();
-            client.SendMessage(messageBytes);
+            client?.SendMessage(messageBytes);
         }
 
         IEnumerator MoveFunction()
@@ -123,6 +125,23 @@ namespace Assets.Scripts
             //{
             //    StartCoroutine("MoveFunction");
             //}
+        }
+
+        void OnGUI()
+        {
+            var position = Camera.main.WorldToScreenPoint(transform.position);
+            var textSize = GUI.skin.label.CalcSize(new GUIContent(playerName));
+
+            GUI.Label(
+                new Rect(
+                    position.x,                   // x, left offset
+                    Screen.height - position.y - 100, // y, bottom offset
+                    textSize.x,                // width
+                    textSize.y                 // height
+                ),
+                playerName,             // the display text
+                GUI.skin.label        // use a multi-line text area
+            );
         }
 
         //IEnumerator MoveFunction()

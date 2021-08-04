@@ -5,12 +5,12 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace Assets.Scripts.Client
 {
     public class Client
     {
-        private int remotePort = 8000;
-        private string serverAddress = "127.0.0.1";
+        private int remotePort = ServerData.Port;
+        private string serverAddress = ServerData.IpAddress;
         private readonly UdpClient udpClient;
         private IPEndPoint endPoint;
 

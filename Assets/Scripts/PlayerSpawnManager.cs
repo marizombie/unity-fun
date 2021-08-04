@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using FlatBuffers;
 using Messages;
 using UnityEngine;
@@ -10,7 +11,8 @@ namespace Assets.Scripts
     public class PlayerSpawnManager : MonoBehaviour
     {
         private float mapDim = 5;
-        private Client client;
+        private Client.Client client;
+        private DateTime lastMessageTime;
 
         public GameObject playerPrefab;
         public Dictionary<uint, GameObject> playersDictionary;
@@ -19,7 +21,8 @@ namespace Assets.Scripts
         {
             playersDictionary = new Dictionary<uint, GameObject>();
 
-            client = new Client();
+            client = new Client.Client();
+            lastMessageTime = DateTime.Now;
             client.ReceiveMessage();
 
             var startingPosition = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y / 2, 0);
@@ -30,21 +33,26 @@ namespace Assets.Scripts
 
         private void Update()
         {
-            if (client.MessageDataStorage.IsEmpty) return;
+            if (client == null || client.MessageDataStorage.IsEmpty) return;
 
+            if ((DateTime.Now - lastMessageTime).Seconds >= 1)
+            {
+                Ping();
+            }
             if (!client.MessageDataStorage.TryDequeue(out var results)) return;
 
             var bytesBuffer = new ByteBuffer(results);
             if (bytesBuffer.Length == 0)
             {
                 Debug.Log("bytes buffer is empty");
-
                 return;
             }
 
             var receivedMessage = Message.GetRootAsMessage(bytesBuffer);
+            lastMessageTime = DateTime.Now;
 
-            var playerId = receivedMessage.PlayerId; 
+            var playerId = receivedMessage.PlayerId;
+            Debug.Log($"player id: {playerId}");
             var serverPosition = new Vector3(receivedMessage.X, receivedMessage.Y, receivedMessage.Z);
             var containsId = playersDictionary.TryGetValue(receivedMessage.PlayerId, out var player);
             if (containsId)
@@ -66,6 +74,12 @@ namespace Assets.Scripts
             }
         }
 
+        private void Ping()
+        {
+            //TODO: make normal
+            client.SendMessage(Encoding.UTF8.GetBytes("Ping"));
+        }
+
         public void SpawnNewPlayer(uint playerId, string playerName, Vector3 position, bool isLocalPlayer = false)
         {
             //var position = new Vector3(Random.Range(-mapDim, mapDim), playerPrefab.transform.localScale.y/2, 0);
@@ -74,30 +88,6 @@ namespace Assets.Scripts
             player.GetComponent<Player>().SetInitialProperties(client, playerId, playerName, isLocalPlayer);
 
             playersDictionary.Add(playerId, player);
-        }
-    }
-
-
-    [Serializable]
-    public class MessageStructure
-    {
-        [SerializeField] public float X;
-        [SerializeField] public float Y;
-        [SerializeField] public float Z;
-
-        [SerializeField] public int PlayerId;
-
-        public MessageStructure(float x, float y, float z, int playerId)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-            PlayerId = playerId;
-        }
-
-        public static MessageStructure CreateFromJson(string jsonString)
-        {
-            return JsonUtility.FromJson<MessageStructure>(jsonString);
         }
     }
 }
